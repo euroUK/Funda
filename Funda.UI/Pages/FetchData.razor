@@ -1,0 +1,52 @@
+﻿@page "/fetchdata"
+@using Funda.Core.Models
+@using Funda.Core.Services
+@using Funda.UI.Data
+@inject ClientDataService ClientDataService
+
+@if (properties == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="properties" Hover="true" SortLabel="Sort By" Elevation="0">
+        <HeaderContent>
+            <MudTh>Id</MudTh>
+            <MudTh>Agent Name</MudTh>
+            <MudTh>City</MudTh>
+            <MudTh>Address</MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<EstateProperty, object>(x=>x.BuyPrice)">Buy Price</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<EstateProperty, object>(x=>x.RentalPrice)">Rental Price</MudTableSortLabel></MudTh>
+            <MudTh>Tags</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Date">@context.GlobalId</MudTd>
+            <MudTd DataLabel="Temp. (C)">@context.Agent.AgentName</MudTd>
+            <MudTd DataLabel="Temp. (F)">@context.City</MudTd>
+            <MudTd DataLabel="Summary">@context.Address</MudTd>
+            <MudTd DataLabel="BuyPrice">@context.BuyPrice</MudTd>
+            <MudTd DataLabel="RentalPrice">@context.RentalPrice</MudTd>
+            <MudTd DataLabel="Tags">
+                @if (context.Tags != null)
+                    foreach (var item in context.Tags)
+                        {
+                            <MudChip Color="Color.Default" Size="Size.Small">@item.TagType.Name</MudChip>
+                        }
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+        </PagerContent>
+    </MudTable>
+}
+
+
+@code {
+    private IEnumerable<EstateProperty> properties;
+
+    protected override void OnInitialized()
+    {
+        properties = ClientDataService.GetAllProperties();
+    }
+}

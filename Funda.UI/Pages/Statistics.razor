@@ -1,0 +1,91 @@
+﻿@page "/stats"
+@using Funda.Core.Models
+@using Funda.Core.Services
+@using Funda.UI.Data
+@inject ClientDataService ClientDataService
+<MudCard>
+                <MudCardContent>
+                    <MudSelect T="OfferType" Label="Offer Type" @bind-Value="@SelectedOfferType" For="@(() => SelectedOfferType)"
+                               OffsetY="true" AdornmentColor="Color.Secondary">
+                        @foreach (OfferType item in Enum.GetValues(typeof(OfferType)))
+                            {
+                            <MudSelectItem T="OfferType" Value="@item">@item</MudSelectItem>
+                            }
+                    </MudSelect>
+                           <MudSelect T="TagType" Label="City" @bind-Value="@SelectedCity" For="@(() => SelectedCity)"
+                               OffsetY="true" AdornmentColor="Color.Secondary">
+                                @foreach (var item in cities)
+                                    {
+                                    <MudSelectItem T="TagType" Value="@item">@item.Name</MudSelectItem>
+                                    }
+                        </MudSelect>
+                     <MudSelect T="TagType" Label="Options" @bind-Value="SelectedOption"
+                               OffsetY="true" AdornmentColor="Color.Secondary">
+                        @foreach (var item in options)
+                            {
+                                <MudSelectItem T="TagType" Value="@item">@item.Name</MudSelectItem>
+                            }
+                    </MudSelect>
+                    <MudSelect T="int" Label="List Size" @bind-Value="SelectedSize"
+                               OffsetY="true" AdornmentColor="Color.Secondary">
+                        @foreach (var item in listSize)
+                            {
+                                <MudSelectItem T="int" Value="@item">@item.ToString()</MudSelectItem>
+                            }
+                    </MudSelect>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Primary" Class="ml-auto" OnClick="@OnValidSubmit">Show Statistics</MudButton>
+                </MudCardActions>
+</MudCard>
+
+@if (properties == null)
+{
+
+}
+else
+{
+   <MudTable Items="properties" Hover="true" SortLabel="Sort By" Elevation="0">
+        <HeaderContent>
+            <MudTh>Id</MudTh>
+            <MudTh>Agent Name</MudTh>
+            <MudTh>Count</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Agent Id">@context.Agent.AgentId</MudTd>
+            <MudTd DataLabel="Agen tName">@context.Agent.AgentName</MudTd>
+            <MudTd DataLabel="Total Positions">@context.TotalPositions</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+        </PagerContent>
+    </MudTable>
+}
+
+
+@code {
+    private IEnumerable<AgentStatistics> properties;
+    private IEnumerable<TagType> cities;
+    private IEnumerable<TagType> options;
+    private List<int> listSize;
+    public TagType SelectedCity { get; set; }
+    public TagType SelectedOption { get; set; }
+    public int SelectedSize { get; set; } = 10;
+    private OfferType SelectedOfferType { get; set; } = OfferType.Buy;
+
+    protected override void OnInitialized()
+    {
+        cities = ClientDataService.GetCitiesTags();
+        SelectedCity = cities.FirstOrDefault();
+
+        options = ClientDataService.GetOptionsTags();
+        SelectedOption = options.FirstOrDefault();
+
+        listSize = new List<int>() { 5, 10, 25, 100 };
+    }
+
+    private async Task OnValidSubmit()
+    {
+        properties = ClientDataService.GetStatistics(SelectedCity, SelectedOfferType, SelectedOption, SelectedSize);
+    }
+}

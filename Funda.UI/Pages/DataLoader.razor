@@ -1,0 +1,74 @@
+﻿@page "/loaddata"
+@using Funda.Core.Models
+@using Funda.Core.Services
+@using Funda.UI.Data
+@using Microsoft.EntityFrameworkCore
+@inject FundaDataLoaderService _fundaDataLoaderService
+@inject PropertyDbContext DbContext
+@inject ISnackbar Snackbar
+
+@if (tagTypes == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+            <MudCard>
+                <MudCardContent>
+                    <MudSelect T="OfferType" Label="Offer Type" @bind-Value="@SelectedOfferType" For="@(() => SelectedOfferType)"
+                               OffsetY="true" AdornmentColor="Color.Secondary">
+                        @foreach (OfferType item in Enum.GetValues(typeof(OfferType)))
+                            {
+                            <MudSelectItem T="OfferType" Value="@item">@item</MudSelectItem>
+                            }
+                    </MudSelect>
+                    <MudDatePicker Label="Start from" HelperText="Data will be loaded starting from specified date" Class="mt-3"
+                                   @bind-Date="SelectedDate" For="@(() => SelectedDate)" />
+                         <MudField>
+                            <MudTable Items="tagTypes" Hover="true" SortLabel="Sort By" Elevation="0" Context="tagTypes">
+                                <HeaderContent>
+                                    <MudTh>Id</MudTh>
+                                    <MudTh>Parent Tag</MudTh>
+                                    <MudTh>Name</MudTh>
+                                    <MudTh>Search Code</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="Id">@tagTypes.Id</MudTd>
+                                    <MudTd DataLabel="Parent Tag">@tagTypes.ParentTag?.Name</MudTd>
+                                    <MudTd DataLabel="Name">@tagTypes.Name</MudTd>
+                                    <MudTd DataLabel="Search Code">@tagTypes.Code</MudTd>
+                                </RowTemplate>
+                                <PagerContent>
+                                    <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+                                </PagerContent>
+                            </MudTable>
+                    </MudField>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Primary" Class="ml-auto" OnClick="@OnValidSubmit">Load Data</MudButton>
+                </MudCardActions>
+            </MudCard>
+}
+
+
+@code {
+    private TagType[] tagTypes;
+    private IEnumerable<Core.ApiModels.EstatePropertyModel> properties;
+    private OfferType SelectedOfferType { get; set; } = OfferType.Buy;
+    private DateTime? SelectedDate { get; set; } = DateTime.UtcNow.Date.AddDays(-3);
+    private string tag = "";
+
+    private async Task OnValidSubmit()
+    {
+        await foreach (var item in _fundaDataLoaderService.LoadData(SelectedOfferType, SelectedDate))
+        {
+            Snackbar.Add(item, Severity.Success);
+            StateHasChanged();
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        DbContext.Database.EnsureCreated();
+        tagTypes = await DbContext.TagTypes.Include(x=>x.ParentTag).OrderBy(x=>x.Id).ToArrayAsync();
+    }
+}
